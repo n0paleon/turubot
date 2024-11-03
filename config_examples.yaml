@@ -1,0 +1,17 @@
+app:
+  name: "PSK Bot"
+  author: "Muhammad Naufal Al Fattah"
+  timeout: 30000
+  development: true
+
+# put your telegram bot token here
+bot:
+  tg_token: "YOUR_BOT_TOKEN"
+  debug: false
+
+log:
+  level: -1
+  encoding: "console"
+
+workerpool:
+  size: 1000
