@@ -70,13 +70,13 @@ func (t *TelebotApp) messageHandler(update tgbotapi.Update) {
 	for _, routeCmd := range t.routes {
 		if routeCmd.pattern == update.Message.Text {
 			matched = true
-			_ = workerpool.Pool.Submit(func() {
-				msg, err := routeCmd.handler(update)
-				if err != nil {
-					logger.C.Error(err)
-				}
-				_, _ = t.bot.Send(msg)
-			})
+
+			msg, err := routeCmd.handler(update)
+			if err != nil {
+				logger.C.Error(err)
+			}
+			_, _ = t.bot.Send(msg)
+
 			break
 		}
 	}
@@ -104,6 +104,13 @@ func (t *TelebotApp) callbackHandler(update tgbotapi.Update) {
 				logger.C.Error(err)
 			}
 			msg = responseMsg
+
+			// send callback status
+			_ = workerpool.Pool.Submit(func() {
+				responseCb := tgbotapi.NewCallback(update.CallbackQuery.ID, "")
+				_, _ = t.bot.Request(responseCb)
+			})
+
 			break
 		}
 	}
@@ -122,11 +129,17 @@ func (t *TelebotApp) HandleIncomingMessages() {
 
 	for update := range updatesChan {
 		if update.Message != nil {
-			t.messageHandler(update)
+			_ = workerpool.Pool.Submit(func() {
+				logger.C.Infow("new message received", "message", update.Message.Text, "from", update.Message.From.String())
+				t.messageHandler(update)
+			})
 		}
 
 		if update.CallbackQuery != nil {
-			t.callbackHandler(update)
+			_ = workerpool.Pool.Submit(func() {
+				logger.C.Infow("new callback received", "callback", update.CallbackQuery.Data, "from", update.CallbackQuery.From.String())
+				t.callbackHandler(update)
+			})
 		}
 	}
 }
