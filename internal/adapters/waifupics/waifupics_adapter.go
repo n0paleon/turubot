@@ -65,7 +65,7 @@ func (w *waifupics) getImageUrl(category ports.WaifuCategory, waifuType string) 
 
 func (w *waifupics) randomType(category ports.WaifuCategory) string {
 	nsfw := []string{
-		"waifu", "neko", "trap", "blowjob",
+		"waifu", "neko", "blowjob",
 	}
 	sfw := []string{
 		"waifu", "neko", "shinobu", "megumin", "bully", "cuddle", "cry", "hug", "awoo", "kiss", "lick", "pat", "smug", "bonk", "yeet", "blush", "smile", "wave", "highfive", "handhold",
