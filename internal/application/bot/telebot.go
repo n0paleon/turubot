@@ -2,7 +2,6 @@ package bot
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"go.uber.org/fx"
 	"turubot/infra/config"
 	"turubot/infra/logger"
 	"turubot/infra/workerpool"
@@ -20,7 +19,7 @@ type TelebotApp struct {
 	routes       []route
 }
 
-func NewBotApp(lc fx.Lifecycle, cfg *config.Config, waifuPicsApi ports.WaifuPics) *TelebotApp {
+func NewBotApp(cfg *config.Config, waifuPicsApi ports.WaifuPics) *TelebotApp {
 	bot, err := tgbotapi.NewBotAPI(cfg.Bot.TGToken)
 	if err != nil {
 		logger.C.Error(err)
@@ -66,8 +65,11 @@ func NewBotApp(lc fx.Lifecycle, cfg *config.Config, waifuPicsApi ports.WaifuPics
 }
 
 func (t *TelebotApp) messageHandler(update tgbotapi.Update) {
+	matched := false
+
 	for _, routeCmd := range t.routes {
 		if routeCmd.pattern == update.Message.Text {
+			matched = true
 			_ = workerpool.Pool.Submit(func() {
 				msg, err := routeCmd.handler(update)
 				if err != nil {
@@ -75,7 +77,18 @@ func (t *TelebotApp) messageHandler(update tgbotapi.Update) {
 				}
 				_, _ = t.bot.Send(msg)
 			})
+			break
 		}
+	}
+
+	if !matched {
+		_ = workerpool.Pool.Submit(func() {
+			msg, err := t.mainMenuHandler(update)
+			if err != nil {
+				logger.C.Error(err)
+			}
+			_, _ = t.bot.Send(msg)
+		})
 	}
 }
 
